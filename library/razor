@@ -29,10 +29,10 @@ from ansible.module_utils.basic import *
 DOCUMENTATION = '''
 ---
 module: razor
-short_description: Module to use puppetlabs-razor server
+short_description: Manage Razor server and nodes
 description:
     - This module uses Razor to manage a cluster of servers
-version_added: "1.4"
+version_added: "1.6"
 author: Solomon Wagner
 requirements:
     - A razor server
@@ -42,30 +42,134 @@ options:
         description:
             - url for the razor api
         required: True
-    host_name:
-        description:
-            - name of server to be rekicked
-        required: true
-    host_ip:
-        description:
-            - ip of server to rekicked (can be hostname if that
-              resolves on the machine running ansible)
-        required: true
-    kick_wait:
-        description:
-            - how long to wait in seconds for a server to rekick or reboot
-        required: true
 '''
 
-EXAMPLES = '''
-# reinstall node
-reinstall_node:
-    razor_url: http://razor:5000/api
-    host_name: node1
-    host_ip: 1.2.3.4
-    kick_wait: 1200
-'''
+COLLECTION_MAP = {
+    'brokers': {},
+    'commands': {},
+    'events': {},
+    'hooks': {},
+    'nodes': {},
+    'policies': {},
+    'repos': {},
+    'tags': {},
+    'tasks': {}
+}
 
+COMMAND_MAP = {
+    'add-policy-tag': {
+        'command': 'add-policy-tag',
+        'variables': {}
+    },
+    'create-broker': {
+        'command': '',
+        'variables': {}
+    },
+    'create-hook': {
+        'command': '',
+        'variables': {}
+    },
+    'create-policy': {
+        'command': '',
+        'variables': {}
+    },
+    'create-repo': {
+        'command': '',
+        'variables': {}
+    },
+    'create-tag': {
+        'command': '',
+        'variables': {}
+    },
+    'create-task': {
+        'command': '',
+        'variables': {}
+    },
+    'delete-broker': {
+        'command': '',
+        'variables': {}
+    },
+    'delete-hook': {
+        'command': '',
+        'variables': {}
+    },
+    'delete-node': {
+        'command': '',
+        'variables': {}
+    },
+    'delete-policy': {
+        'command': '',
+        'variables': {}
+    },
+    'delete-repo': {
+        'command': '',
+        'variables': {}
+    },
+    'delete-tag': {
+        'command': '',
+        'variables': {}
+    },
+    'disable-policy': {
+        'command': '',
+        'variables': {}
+    },
+    'enable-policy': {
+        'command': '',
+        'variables': {}
+    },
+    'modify-node-metadata': {
+        'command': '',
+        'variables': {}
+    },
+    'modify-policy-max-count': {
+        'command': '',
+        'variables': {}
+    },
+    'move-policy': {
+        'command': '',
+        'variables': {}
+    },
+    'reboot-node': {
+        'command': '',
+        'variables': {}
+    },
+    'register-node': {
+        'command': '',
+        'variables': {}
+    },
+    'reinstall-node': {
+        'command': '',
+        'variables': {}
+    },
+    'remove-node-metadata': {
+        'command': '',
+        'variables': {}
+    },
+    'remove-policy-tag': {
+        'command': '',
+        'variables': {}
+    },
+    'set-node-desired-power-state': {
+        'command': '',
+        'variables': {}
+    },
+    'set-node-hw-info': {
+        'command': '',
+        'variables': {}
+    },
+    'set-node-ipmi-credentials': {
+        'command': '',
+        'variables': {}
+    },
+    'update-node-metadata': {
+        'command': '',
+        'variables': {}
+    },
+    'update-tag-rule': {
+        'command': '',
+        'variables': {}
+    },
+}
 
 class Razor(object):
 
