@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+# Copyright 2014, Rackspace US, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# stdlib imports
+import datetime
+import re
+import socket
+import syslog
+import time
+
+# pypi imports
+import requests
+
+# ansible imports
+from ansible.module_utils.basic import *
+
+DOCUMENTATION = '''
+---
+module: razor
+short_description: Module to use puppetlabs-razor server
+description:
+    - This module uses Razor to manage a cluster of servers
+version_added: "1.4"
+author: Solomon Wagner
+requirements:
+    - A razor server
+    - python requests
+options:
+    razor_url:
+        description:
+            - url for the razor api
+        required: True
+    host_name:
+        description:
+            - name of server to be rekicked
+        required: true
+    host_ip:
+        description:
+            - ip of server to rekicked (can be hostname if that
+              resolves on the machine running ansible)
+        required: true
+    kick_wait:
+        description:
+            - how long to wait in seconds for a server to rekick or reboot
+        required: true
+'''
+
+EXAMPLES = '''
+# reinstall node
+reinstall_node:
+    razor_url: http://razor:5000/api
+    host_name: node1
+    host_ip: 1.2.3.4
+    kick_wait: 1200
+'''
+
+
+class Razor(object):
+
+    def __init__(self, module):
+        self.module = module
+        self.wait = int(module.params['kick_wait'])
+        self.host_name = module.params['host_name']
+        self.host_ip = module.params['host_ip']
+        self.razor_url = module.params['razor_url']
+        self.ssh_re = re.compile(pattern='SSH', flags=re.IGNORECASE)
+
+    def check_ssh(self, host, port=22, timeout=5):
+        syslog.syslog("checking for ssh at %(host)s:%(port)s"
+                      % dict(host=host, port=port))
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            sock.connect((host, port))
+            banner = sock.recv(1024)
+            syslog.syslog(
+                "Read '%(banner)s' from %(host)s:%(port)s"
+                % dict(host=host, port=port, banner=banner)
+            )
+            sock.close()
+            match = bool(self.ssh_re.search(banner))
+            syslog.syslog(
+                "Read '%(banner)s' from %(host)s:%(port)s match=%(m)s"
+                % dict(host=host, port=port, banner=banner, m=match)
+            )
+            return match
+        except Exception as e:
+            syslog.syslog("Error checking for ssh: %(err)s" % dict(err=str(e)))
+        try:
+            sock.close()
+        except Exception:
+            return False
+        return False
+
+    def wait_ssh(self, host, timeout):
+        start_time = datetime.datetime.now()
+        while ((not self.check_ssh(host=host))
+                and ((datetime.datetime.now()-start_time).seconds < timeout)):
+            time.sleep(15)
+        return self.check_ssh(host=host)
+
+    def reinstall_node(self):
+        for attempt in xrange(self.tries):
+            syslog.syslog(
+                "Kicking %(node)s %(attempt)s/%(tries)s"
+                % dict(node=self.host_name, attempt=attempt, tries=self.tries)
+            )
+
+            # initialise rekick
+            request_body = {'name': '%(host_name)s' % self.host_name}
+            requests.post('%(razor_url)s/commands/reinstall-node'
+                          % razor_url=self.djeep_url,
+                          data=json.dumps(request_body))
+
+            # wait for node to go down
+            time.sleep(120)
+
+            # wait for node to come back up
+            if self.wait_ssh(host=self.host_ip, timeout=self.wait):
+                self.module.exit_json(changed=True)
+            else:
+                if self.reboot(tries=self.tries):
+                    self.module.exit_json(changed=True)
+                    self.module.fail_json(err='Failed to rekick',
+                                          rc=2,
+                                          msg='Failed to rekick')
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            host_ip=dict(required=True),
+            host_name=dict(required=True),
+            kick_wait=dict(required=True),
+            kick_tries=dict(required=True),
+            djeep_url=dict(required=True)
+        ),
+        supports_check_mode=False
+    )
+
+if __name__ == '__main__':
+        main()
