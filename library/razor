@@ -171,6 +171,7 @@ COMMAND_MAP = {
     },
 }
 
+
 class Razor(object):
 
     def __init__(self, module):
