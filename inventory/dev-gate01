@@ -1,0 +1,15 @@
+[infrastructure]
+node05 ansible_ssh_host=10.127.52.5 ansible_ssh_user=root member_number=1 djeep_id=4
+node06 ansible_ssh_host=10.127.52.6 ansible_ssh_user=root member_number=2 djeep_id=6
+node07 ansible_ssh_host=10.127.52.7 ansible_ssh_user=root member_number=3 djeep_id=7
+
+[network]
+node05 ansible_ssh_host=10.127.52.5 ansible_ssh_user=root member_number=1 djeep_id=4
+node06 ansible_ssh_host=10.127.52.6 ansible_ssh_user=root member_number=2 djeep_id=6
+node07 ansible_ssh_host=10.127.52.7 ansible_ssh_user=root member_number=3 djeep_id=7
+
+[compute]
+node08 ansible_ssh_host=10.127.52.8 ansible_ssh_user=root member_number=4 djeep_id=8
+
+[cinder]
+node09 ansible_ssh_host=10.127.52.9 ansible_ssh_user=root member_number=5 djeep_id=34
