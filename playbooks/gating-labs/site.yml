@@ -1,18 +1,19 @@
 ---
 - name: Provision dev cluster
-  hosts: "{{hosts}}"
+  hosts: cluster_hosts
   gather_facts: True
   vars_files:
     - vars/packages.yml
   roles:
     - lvm
     - packages
-    - dev-networking
+    - networking
     - dev-swift
 
 - name: Provision dev cluster
-  hosts: "{{hosts}}[0]"
+  hosts: cluster_hosts[0]
   gather_facts: True
   roles:
     - setup-git
-    - dev-setup-rpc
+    - configure-rpc-compute
+    - configure-rpc-swift

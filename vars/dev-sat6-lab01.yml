@@ -1,0 +1,41 @@
+networking:
+    - name: "em1.2{{cluster_number}}00"
+      type: "manual"
+      directives:
+        - "up ip link set $IFACE up"
+        - "down ip link set $IFACE down"
+    - name: "br-mgmt"
+      type: "static"
+      directives:
+        - "bridge_ports em1.2{{cluster_number}}00"
+        - "address 172.29.236.{{member_number}}/22"
+    - name: "em1.2{{cluster_number}}01"
+      type: "manual"
+      directives:
+        - "up ip link set $IFACE up"
+        - "down ip link set $IFACE down"
+    - name: "br-vxlan"
+      type: "static"
+      directives:
+        - "bridge_ports em1.2{{cluster_number}}01"
+        - "address 172.29.240.{{member_number}}/22"
+    - name: "em1.2{{cluster_number}}02"
+      type: "manual"
+      directives:
+        - "up ip link set $IFACE up"
+        - "down ip link set $IFACE down"
+    - name: "br-storage"
+      type: "static"
+      directives:
+        - "bridge_ports em1.2{{cluster_number}}02"
+        - "address 172.29.244.{{member_number}}/22"
+    - name: "em1.2{{cluster_number}}03"
+      type: "manual"
+      directives:
+        - "up ip link set $IFACE up"
+        - "down ip link set $IFACE down"
+    - name: "br-vlan"
+      type: "static"
+      directives:
+        - "bridge_ports em1.2{{cluster_number}}03"
+        - "address 172.29.248.{{member_number}}/22"

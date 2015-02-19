@@ -17,14 +17,14 @@
   register: environment_version
 
 - name: install rpc user config file
-  template: src=rpc_user_config.j2 
+  template: src="{{lab_name or 'default'}}/rpc_user_config.j2"
             dest=~/rpc_deploy/rpc_user_config.yml
 
 - name: Generate passphrases
   command: ~/{{rpc_repo_dir}}/scripts/pw-token-gen.py --file ~/rpc_deploy/user_variables.yml
 
 - name: "template target.sh"
-  template: src=target.sh.j2 
+  template: src="{{lab_name or 'default'}}/target.sh.j2"
             dest=~/target.sh 
             mode=0755
 

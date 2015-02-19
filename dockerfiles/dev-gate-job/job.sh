@@ -8,6 +8,10 @@ env
 # Set HOME to /root
 export HOME=/root
 
+# Lab variables
+LAB=dev-sat6-lab01
+CLUSTER=cluster0{$EXECUTOR_NUMBER}
+
 # Switch to home directory
 cd
 
@@ -44,7 +48,7 @@ cleanup() {
 
   # Rekick the nodes in preperation for the next run.
   [ -e playbooks ] || pushd jenkins-rpc
-  [[ $REKICK == "yes" ]] &&  ansible-playbook -i inventory/dev-sat6-lab01 -e CLUSTER_NUMBER=${EXECUTOR_NUMBER}  playbooks/dev-labs/clean.yml ||:
+  [[ $REKICK == "yes" ]] &&  ansible-playbook -i inventory/$LAB-$CLUSTER playbooks/dev-labs/clean.yml ||:
 
   # Exit
   exit $retval
@@ -71,14 +75,16 @@ then
   export PYTHONUNBUFFERED=1
   export ANSIBLE_FORCE_COLOR=1
   ansible-playbook \
-    -i inventory/dev-sat6-lab01 \
-    -e hosts=cluster${EXECUTOR_NUMBER} \
+    -i inventory/$LAB-$CLUSTER \
+    -e @vars/$LAB \
+    -e cluster_number=${EXECUTOR_NUMBER} \
+    -e lab_name=$LAB \
     -e pullRequestID=${ghprbPullId} \
     -e targetBranch=${TARGET_BRANCH} \
     -e RPC_REPO_URL=${RPC_REPO_URL} \
     -e TRIGGER=${TRIGGER}\
     -e GERRIT_REFSPEC=${GERRIT_REFSPEC}\
-    playbooks/dev-labs/site.yml & wait %1
+    playbooks/gating-labs/site.yml & wait %1
 
   popd
 

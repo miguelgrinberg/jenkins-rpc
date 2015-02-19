@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -x
+
+export PYTHONUNBUFFERED=1
+export ANSIBLE_FORCE_COLOR=1
+export ANSIBLE_OPTIONS="-e @/root/rpc_deploy/user_variables.yml"
+
+#Add Return Code
+arc(){
+  rc=$(($rc + $?))
+}
+
+rc=0
+
+pushd {{rpc_repo_dir}}/rpc_deployment
+
+# fail fast on anything that exits with an error level > 0
+set -e
+
+ansible-playbook $ANSIBLE_OPTIONS playbooks/infrastructure/haproxy-install.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/setup/host-setup.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/infrastructure/infrastructure-setup.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/keystone-all.yml; arc
+
+# no longer fail fast from now on - just continue
+set +e
+
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/glance-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/heat-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/nova-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/neutron-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/cinder-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/horizon-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/utility-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/rpc-support-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/infrastructure/rsyslog-config.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/swift-all.yml; arc
+ansible-playbook $ANSIBLE_OPTIONS playbooks/openstack/tempest.yml; arc
+ansible "utility_all[0]" -m shell -a /root/rpc_tempest_gate.sh; arc
+popd
+
+exit $rc

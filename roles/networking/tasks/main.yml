@@ -37,11 +37,19 @@
   register: repl_address
   when: rpc_user_config.repl_cidr is defined
 
-- name: ensure /etc/network/interfaces.d exists
+- name: remove previously configured interfaces.d fragments
+  file: dest=/etc/network/interfaces.d state=absent
+
+- name: create fresh interfaces.d directory
   file: path=/etc/network/interfaces.d state=directory owner=root mode=0655
 
-- name: setup interfaces file
-  template: src=interfaces.j2 dest=/etc/network/interfaces owner=root group=root mode=0644
+- name: enable sourcing of interfaces.d fragments
+  lineinfile: >
+    dest=/etc/network/interfaces
+    insertafter=EOF
+    regexp="{{ item.name }}.cfg$"
+    line="source /etc/network/interfaces.d/{{ item.name }}.cfg"
+  with_items: networking
 
 - name: setup interface config files
   template: src=interface.j2 dest=/etc/network/interfaces.d/{{ item.name }}.cfg owner=root group=root mode=0644

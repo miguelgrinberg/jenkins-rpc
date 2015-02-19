@@ -1,7 +1,7 @@
 ---
 - name: Rekick cluster nodes
   gather_facts: False
-  hosts: "cluster{{ CLUSTER_NUMBER }}"
+  hosts: cluster_hosts
   tasks:
     - name: Rekick and wait for nodes to become available
       delegate_to: localhost

@@ -1,0 +1,6 @@
+[cluster_hosts]
+node23 ansible_ssh_host=10.127.52.23 ansible_ssh_user=root member_number=1 djeep_id=18
+node24 ansible_ssh_host=10.127.52.24 ansible_ssh_user=root member_number=2 djeep_id=19
+node25 ansible_ssh_host=10.127.52.25 ansible_ssh_user=root member_number=3 djeep_id=20
+node26 ansible_ssh_host=10.127.52.26 ansible_ssh_user=root member_number=4 djeep_id=21
+node27 ansible_ssh_host=10.127.52.27 ansible_ssh_user=root member_number=5 djeep_id=22

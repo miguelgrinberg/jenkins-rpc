@@ -1,0 +1,38 @@
+---
+{% set cluster_hosts = groups['cluster_hosts'] %}
+{% set host_count = cluster_hosts|length %}
+
+global_overrides:
+  swift:
+    part_power: 8
+    storage_network: 'br-storage'
+    account:
+    container:
+    drives:
+      - name: swift1
+      - name: swift2
+      - name: swift3
+      - name: swift4
+      - name: swift5
+    mount_point: /mnt
+    storage_policies:
+      - policy:
+          name: gold
+          index: 0
+          repl_number: 3
+          default: True
+
+swift-proxy_hosts:
+{% for index in range(count) %}
+  {{cluster_hosts[index]}}:
+    ip: {{hostvars[cluster_hosts[index]]["ansible_ssh_host"]}}
+{% endfor %}
+
+swift_hosts:
+{% for index in range(host_count|int) %}
+  {{cluster_hosts[index]}}:
+    ip: {{hostvars[cluster_hosts[index]]["ansible_ssh_host"]}}
+    container_vars:
+      swift_vars:
+        zone: {{ index }}
+{% endfor %}

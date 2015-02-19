@@ -1,0 +1,108 @@
+---
+{% set cluster_hosts = groups['cluster_hosts'] %}
+{% set host_count = cluster_hosts|length %}
+
+environment_version: {{environment_version.stat.md5}}
+
+cidr_networks:
+  container: 172.29.236.0/22
+  tunnel: 172.29.240.0/22
+  storage: 172.29.244.0/22
+
+used_ips:
+{% for index in range(host_count|int) %}
+  - 172.29.236.{{index}}
+  - 172.29.240.{{index}}
+  - 172.29.244.{{index}}
+{% endfor %}
+
+global_overrides:
+  internal_lb_vip_address: 172.29.236.1
+  external_lb_vip_address: {{hostvars[cluster_hosts[0]]["ansible_ssh_host"]}}
+  tunnel_bridge: br-vxlan
+  management_bridge: br-mgmt
+  lb_name: lb_name_in_core
+  provider_networks:
+    - network:
+        group_binds:
+          - all_containers
+          - hosts
+        type: "raw"
+        container_bridge: "br-mgmt"
+        container_interface: "eth1"
+        ip_from_q: "container"
+    - network:
+        group_binds:
+          - glance_api
+          - cinder_api
+          - cinder_volume
+          - nova_compute
+          - swift_proxy
+        type: "raw"
+        container_bridge: "br-storage"
+        container_interface: "eth2"
+        ip_from_q: "storage"
+    - network:
+        group_binds:
+          - neutron_linuxbridge_agent
+        container_bridge: "br-vxlan"
+        container_interface: "eth10"
+        ip_from_q: "tunnel"
+        type: "vxlan"
+        range: "1:1000"
+        net_name: "vxlan"
+    - network:
+        group_binds:
+          - neutron_linuxbridge_agent
+        container_bridge: "br-vlan"
+        container_interface: "eth11"
+        type: "flat"
+        net_name: "vlan"
+
+infra_hosts:
+{% if host_count|int >= 3 %}
+{% set count = 3 %}
+{% else %}
+{% set count = host_count|int %}
+{% endif -%}
+{% for index in range(count) %}
+  {{cluster_hosts[index]}}:
+{% if count < 3 %}
+    affinity:
+{% if count < 2 %}
+      galera_container: 3
+      rabbitmq_container: 3
+{% else %}
+      galera_container: 2
+      rabbitmq_container: 2
+{% endif %}
+{% endif %}
+    ip: {{hostvars[cluster_hosts[index]]["ansible_ssh_host"]}}
+{% endfor %}
+
+compute_hosts:
+  {{cluster_hosts[3 % host_count|int]}}:
+    ip: {{hostvars[cluster_hosts[3 % host_count|int]]["ansible_ssh_host"]}}
+
+storage_hosts:
+  {{cluster_hosts[4 % host_count|int]}}:
+    ip: {{hostvars[cluster_hosts[4 % host_count|int]]["ansible_ssh_host"]}}
+    container_vars:
+      cinder_backends:
+        limit_container_types: cinder_volume
+        lvm:
+          volume_group: cinder-volumes
+          volume_driver: cinder.volume.drivers.lvm.LVMISCSIDriver
+          volume_backend_name: LVM_iSCSI
+
+log_hosts:
+  {{cluster_hosts[5 % host_count|int]}}:
+    ip: {{hostvars[cluster_hosts[5 % host_count|int]]["ansible_ssh_host"]}}
+
+network_hosts:
+  {{cluster_hosts[6 % host_count|int]}}:
+    ip: {{hostvars[cluster_hosts[6 % host_count|int]]["ansible_ssh_host"]}}
+
+haproxy_hosts:
+  {{cluster_hosts[0]}}:
+    ip: {{hostvars[cluster_hosts[0]]["ansible_ssh_host"]}}
